@@ -29,7 +29,8 @@ public class LocationController {
 	private LocationService locationService;
 	
 	@GetMapping("/findAll")
-    @PreAuthorize("hasAuthority('ADMIN')")
+	@PreAuthorize("hasRole('ADMINISTRADOR')")
+//	@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<List<LocationDto>> findAll(@RequestHeader("company_api_key") String companyApiKey) {
         UUID companyUuid = UUID.fromString(companyApiKey);
         List<LocationDto> locationsDto = locationService.findAll(companyUuid);
@@ -37,7 +38,8 @@ public class LocationController {
     }
 	
 	@PostMapping("/createLocation")
-    @PreAuthorize("hasAuthority('ADMIN')")
+	@PreAuthorize("hasRole('ADMINISTRADOR')")
+//	@PreAuthorize("hasAuthority('ADMIN')")
     public ResponseEntity<LocationDto> create(@RequestBody LocationDto locationDto, @RequestHeader("company_api_key") String companyApiKey) {
         UUID companyUuid = UUID.fromString(companyApiKey);
         LocationDto locationInsertada = locationService.create(locationDto, companyUuid);
@@ -45,7 +47,8 @@ public class LocationController {
     }
 	
 	@GetMapping("/find/{id}")
-	@PreAuthorize("hasAuthority('ADMIN')")
+	@PreAuthorize("hasRole('ADMINISTRADOR')")
+//	@PreAuthorize("hasAuthority('ADMIN')")
 	public ResponseEntity<LocationDto> findById(@PathVariable Long id, @RequestHeader("company_api_key") String companyApiKey){
 		UUID companyUuid = UUID.fromString(companyApiKey);
 		LocationDto locationDto = locationService.findById(id, companyUuid);
@@ -53,7 +56,8 @@ public class LocationController {
 	}
 
 	@PutMapping("/update")
-	@PreAuthorize("hasAuthority('ADMIN')")
+	@PreAuthorize("hasRole('ADMINISTRADOR')")
+//	@PreAuthorize("hasAuthority('ADMIN')")
 	public ResponseEntity<LocationDto> update(@RequestBody LocationDto locationDto, @RequestHeader("company_api_key") String companyApiKey) {
 		UUID companyUuid = UUID.fromString(companyApiKey);
 		LocationDto locationActualizado = locationService.update(locationDto, companyUuid);
@@ -61,7 +65,8 @@ public class LocationController {
 	}
 
 	@DeleteMapping("/{id}")
-	@PreAuthorize("hasAuthority('ADMIN')")
+	@PreAuthorize("hasRole('ADMINISTRADOR')")
+//	@PreAuthorize("hasAuthority('ADMIN')")
 	public ResponseEntity<LocationDto> deleteById(@PathVariable Long id, @RequestHeader("company_api_key") String companyApiKey){
 		UUID companyUuid = UUID.fromString(companyApiKey);
         locationService.deleteById(id, companyUuid);

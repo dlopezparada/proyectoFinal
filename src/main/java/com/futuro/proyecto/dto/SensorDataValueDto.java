@@ -1,7 +1,7 @@
 package com.futuro.proyecto.dto;
 
 import java.sql.Date;
-
+import java.sql.Timestamp;
 
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +11,8 @@ import lombok.Data;
 public class SensorDataValueDto {
 
 	private Integer id;
-	private SensorDataDto data;
-	private Integer variableId;
+	private Integer sensorDataId;
+	private String variable;
 	private String value;
-	private Date fechaRecepcion;
+	private Timestamp fecha;
 }

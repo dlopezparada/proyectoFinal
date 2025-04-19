@@ -3,18 +3,23 @@ package com.futuro.proyecto.services;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.futuro.proyecto.dto.CompanyDto;
 import com.futuro.proyecto.dto.LocationDto;
 import com.futuro.proyecto.models.Company;
 import com.futuro.proyecto.models.Location;
+import com.futuro.proyecto.models.Sensor;
 import com.futuro.proyecto.repository.CompanyRepository;
 import com.futuro.proyecto.repository.LocationRepository;
+import com.futuro.proyecto.repository.SensorRepository;
 
 @Service
 public class LocationServiceImp implements LocationService{
@@ -24,6 +29,9 @@ public class LocationServiceImp implements LocationService{
 	
 	@Autowired
 	private CompanyRepository companyRepository;
+	
+	@Autowired
+	private SensorRepository sensorRepository;
 
 	@Override
     public List<LocationDto> findAll(UUID companyApiKey) {
@@ -32,7 +40,6 @@ public class LocationServiceImp implements LocationService{
 		List<Location> locationList = locationRepository.findAll();
         if (locationList == null || locationList.isEmpty()) {
             throw new NoSuchElementException("No se encontraron ubicaciones.");
-//            return new ArrayList<LocationDto>();
         }
         
         return locationList.stream()
@@ -45,7 +52,6 @@ public class LocationServiceImp implements LocationService{
                         .company(CompanyDto.builder()
                                 .id(location.getCompany().getId())
                                 .companyName(location.getCompany().getCompanyName())
-//                                .companyApiKey(location.getCompany().getCompanyApiKey())
                                 .build())
                         .build())
                 .collect(Collectors.toList());
@@ -53,10 +59,10 @@ public class LocationServiceImp implements LocationService{
 	
 	private void validateCompanyApiKey(UUID companyApiKey) {
         if (companyApiKey == null) {
-            throw new IllegalArgumentException("Company API key is required");
+            throw new IllegalArgumentException("Company API key es requerido");
         }
         if (!companyRepository.existsByCompanyApiKey(companyApiKey)) {
-            throw new IllegalArgumentException("Invalid company API key");
+            throw new IllegalArgumentException("company API key invalido");
         }
     }
 
@@ -87,24 +93,16 @@ public class LocationServiceImp implements LocationService{
 		
 	    System.out.println("Company API Key recibido en el servicio: " +companyApiKey);
 
-	    Company company = companyRepository.findByCompanyApiKey(companyApiKey).orElseThrow(() -> new NoSuchElementException("Invalid Company API key: " + companyApiKey));
-	    
-//	    if (company == null) {
-//	        System.out.println("Company API Key invalida " + companyApiKey);
-//	        return new LocationDto();
-//	    }
+	    Company company = companyRepository.findByCompanyApiKey(companyApiKey).orElseThrow(() -> new NoSuchElementException("company api kei invalido: " + companyApiKey));
 	    
 	    if (locationDto.getLocationName() == null || locationDto.getLocationName().trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre de la ubicación no puede estar vacío o nulo.");
-//	        return new LocationDto();
 	    }
 	    if (locationDto.getLocationCountry() == null || locationDto.getLocationCountry().trim().isEmpty()) {
             throw new IllegalArgumentException("El país de la ubicación no puede estar vacío o nulo.");
-//	        return new LocationDto();
 	    }
 	    if (locationDto.getLocationCity() == null || locationDto.getLocationCity().trim().isEmpty()) {
             throw new IllegalArgumentException("La ciudad de la ubicación no puede estar vacía o nulo.");
-//	        return new LocationDto();
 	    }
 
 	    Location location = Location.builder()
@@ -119,7 +117,6 @@ public class LocationServiceImp implements LocationService{
 
 	    if (locationInsertada == null) {
             throw new RuntimeException("Error al guardar la ubicación.");
-//	        return  new LocationDto();
 	    }
 
 	    return mapLocationToDto(locationInsertada);
@@ -131,7 +128,6 @@ public class LocationServiceImp implements LocationService{
 	    }
 	    return LocationDto.builder()
 	            .id(location.getId())
-//	            .companyApiKey(location.getCompany().getCompanyApiKey())
 	            .locationName(location.getLocationName())
 	            .locationCountry(location.getLocationCountry())
 	            .locationCity(location.getLocationCity())
@@ -147,7 +143,6 @@ public class LocationServiceImp implements LocationService{
 	    return CompanyDto.builder()
 	            .id(company.getId())
 	            .companyName(company.getCompanyName())
-//	            .companyApiKey(company.getCompanyApiKey())
 	            .build();
 	}
 
@@ -195,12 +190,19 @@ public class LocationServiceImp implements LocationService{
 	}
 
 	@Override
-	 public LocationDto deleteById(Long id, UUID companyApiKey) {
+	public LocationDto deleteById(Long id, UUID companyApiKey) {
 		validateCompanyApiKey(companyApiKey);
 	    System.out.println("Company API Key recibido en el servicio: " +companyApiKey);
+
+	    Location location = locationRepository.findById(id)
+	    		.orElseThrow(() -> new NoSuchElementException("Ubicación no encontrada con el id: " + id));
 	    
-        Location location = locationRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Ubicación no encontrada con el id: " + id));
+	    List<Sensor> sensors = sensorRepository.findByLocation_Id(location.getId());
+	    
+	    if ( !sensors.isEmpty() ) {
+	    	throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede eliminar un location con sensores asociados");
+	    }
+	    
         locationRepository.deleteById(id);
         
         return LocationDto.builder()
@@ -212,7 +214,6 @@ public class LocationServiceImp implements LocationService{
                 .company(CompanyDto.builder()
                         .id(location.getCompany().getId())
                         .companyName(location.getCompany().getCompanyName())
-//                        .companyApiKey(location.getCompany().getCompanyApiKey())
                         .build())
                 .build();
     }

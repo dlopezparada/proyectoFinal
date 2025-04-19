@@ -25,6 +25,7 @@ public class SensorDto {
 
 	@NotBlank(message = "El campo meta del sensor es obligatorio")
 	private String sensorMeta;
+	private Long locationId;
 
 	private UUID sensorApiKey;
 	

@@ -9,16 +9,19 @@ import com.futuro.proyecto.dto.CompanyDto;
 import com.futuro.proyecto.dto.LocationDto;
 import com.futuro.proyecto.models.Location;
 import com.futuro.proyecto.models.Sensor;
+import com.futuro.proyecto.models.SensorData;
 import com.futuro.proyecto.repository.CompanyRepository;
 import com.futuro.proyecto.repository.LocationRepository;
+import com.futuro.proyecto.repository.SensorDataRepository;
+
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.futuro.proyecto.dto.SensorDto;
 import com.futuro.proyecto.repository.SensorRepository;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class SensorServiceImp implements SensorService{
@@ -29,6 +32,8 @@ public class SensorServiceImp implements SensorService{
 	private  LocationRepository locationRepository;
 	@Autowired
 	private CompanyRepository companyRepository;
+	@Autowired
+	private SensorDataRepository sensorDataRepository;
 
 
     public SensorServiceImp(SensorRepository sensorRepository,  LocationRepository locationRepository) {
@@ -38,10 +43,10 @@ public class SensorServiceImp implements SensorService{
     
     private void validateCompanyApiKey(UUID companyApiKey) {
         if (companyApiKey == null) {
-            throw new IllegalArgumentException("Company API key is required");
+            throw new IllegalArgumentException("Company API key es requerido");
         }
         if (!companyRepository.existsByCompanyApiKey(companyApiKey)) {
-            throw new IllegalArgumentException("Invalid company API key");
+            throw new IllegalArgumentException("company API key invalido");
         }
     }
 
@@ -86,13 +91,14 @@ public class SensorServiceImp implements SensorService{
 	}
 
 	@Override
-	public SensorDto findById(Long id) {
+	public SensorDto findById(Long id, UUID companyApiKey) {
+		validateCompanyApiKey(companyApiKey);
 		if (id == null || id <= 0) {
 			throw new IllegalArgumentException("El ID no puede ser nulo o menor o igual a cero");
 		}
 
 		Sensor sensor = sensorRepository.findById(id.intValue())
-				.orElseThrow(() -> new RuntimeException("Sensor no encontrado con ID: " + id));
+				.orElseThrow(() -> new NoSuchElementException("Sensor no encontrado con ID: " + id));
 
 		Location location = sensor.getLocation();
 		LocationDto locationDto = null;
@@ -100,7 +106,6 @@ public class SensorServiceImp implements SensorService{
 		if (location != null) {
 			locationDto = LocationDto.builder()
 					.id(location.getId())
-//					.companyId(location.getCompany().getId())
 					.company(CompanyDto.builder()
 							.id(location.getCompany().getId())
 							.companyName(location.getCompany().getCompanyName())
@@ -124,21 +129,32 @@ public class SensorServiceImp implements SensorService{
 	}
 
 	@Override
-	public SensorDto create(SensorDto sensorDto) {
-
+	public SensorDto create(SensorDto sensorDto, UUID companyApiKey) {
+		validateCompanyApiKey(companyApiKey);
+		System.out.println("Company API Key recibido en el servicio: " +companyApiKey);
+		
+		if(sensorDto.getLocationId() == null) {
+			throw new IllegalArgumentException("id de location nulo");
+		}
+		
+		Location location2 = locationRepository.findById(sensorDto.getLocationId()).orElseThrow(() -> new NoSuchElementException("id de location invalido: " + sensorDto.getLocationId()));
+		
+		if(sensorDto.getSensorName() == null || sensorDto.getSensorName().trim().equals("")) {
+			throw new IllegalArgumentException("sensor name viene nulo o vacio");
+		}
+		if(sensorDto.getSensorCategory() == null || sensorDto.getSensorCategory().trim().equals("")) {
+			throw new IllegalArgumentException("sensor category viene nulo o vacio");
+		}
+		
+		
 		Sensor sensor = new Sensor();
-		sensor.setId(sensorDto.getId());
 		sensor.setSensorName(sensorDto.getSensorName());
 		sensor.setSensorCategory(sensorDto.getSensorCategory());
 		sensor.setSensorMeta(sensorDto.getSensorMeta());
 		sensor.setSensorApiKey(UUID.randomUUID());
 
-		if (sensorDto.getLocation() != null && sensorDto.getLocation().getId() != null) {
-			Location location = locationRepository.findById(sensorDto.getLocation().getId())
-			.orElseThrow(()-> new ResponseStatusException(HttpStatus.BAD_REQUEST, "La ubicación con ID " + sensorDto.getLocation().getId() + " no existe."));
 
-			sensor.setLocation(location);
-		}
+		sensor.setLocation(location2);
 
 		Sensor savedSensor = sensorRepository.save(sensor);
 
@@ -147,7 +163,6 @@ public class SensorServiceImp implements SensorService{
 		if (location != null) {
 			locationDto = LocationDto.builder()
 					.id(location.getId())
-//					.companyId(location.getCompany().getId())
 					.company(CompanyDto.builder()
 							.id(location.getCompany().getId())
 							.companyName(location.getCompany().getCompanyName())
@@ -172,7 +187,8 @@ public class SensorServiceImp implements SensorService{
 	}
 
 	@Override
-	public SensorDto updateByApiKey(String sensorApiKey, SensorDto sensorDto) {
+	public SensorDto updateByApiKey(String sensorApiKey, SensorDto sensorDto, UUID companyApiKey) {
+		validateCompanyApiKey(companyApiKey);
 
 		if (sensorApiKey == null || sensorApiKey.trim().isEmpty()) {
 			throw new IllegalArgumentException("API key no puede ser nulo o vacío");
@@ -185,23 +201,28 @@ public class SensorServiceImp implements SensorService{
 		if(sensor == null) {
 			throw new NoSuchElementException("No se encontro el sensor de api key: " + uuid);
 		}
+		
+		if(sensorDto.getSensorName() == null || sensorDto.getSensorName().trim().equals("")) {
+			throw new IllegalArgumentException("Sensor name se encuentra nulo o vacio");
+		}
+		if(sensorDto.getSensorCategory() == null || sensorDto.getSensorCategory().trim().equals("")) {
+			throw new IllegalArgumentException("Sensor category se encuentra nulo o vacio");
+		}
 
 		// Actualizamos los campos editables
 		sensor.setSensorName(sensorDto.getSensorName());
 		sensor.setSensorCategory(sensorDto.getSensorCategory());
 		sensor.setSensorMeta(sensorDto.getSensorMeta());
-
-		if (sensorDto.getLocation() != null) {
-			Location location = locationRepository.findById(sensorDto.getLocation().getId())
-					.orElseThrow(() -> new RuntimeException("Location no encontrada con id: " + sensorDto.getLocation().getId()));
-			sensor.setLocation(location);
+		
+		if(sensorDto.getLocationId() == null ) {
+			throw new IllegalArgumentException("Location id nulo o vacio");
 		}
+
 		Location location = sensor.getLocation();
 		LocationDto locationDto = null;
 		if (location != null) {
 			locationDto = LocationDto.builder()
 					.id(location.getId())
-//					.companyId(location.getCompany().getId())
 					.company(CompanyDto.builder()
 							.id(location.getCompany().getId())
 							.companyName(location.getCompany().getCompanyName())
@@ -222,24 +243,30 @@ public class SensorServiceImp implements SensorService{
 				.sensorCategory(saved.getSensorCategory())
 				.sensorMeta(saved.getSensorMeta())
 				.sensorApiKey(saved.getSensorApiKey())
-				.location(locationDto) // Puedes mapear esto mejor si es necesario
+				.location(locationDto)
 				.build();
 	}
 
 	@Override
 	@Transactional
-	public SensorDto deleteById(Long id) {
+	public SensorDto deleteById(Long id, UUID companyApiKey) {
+		validateCompanyApiKey(companyApiKey);
 
 		Sensor sensor = sensorRepository.findById(id.intValue())
-				.orElseThrow(() -> new RuntimeException("Sensor no encontrado con ID: " + id));
+				.orElseThrow(() -> new NoSuchElementException("Sensor no encontrado con ID: " + id));
 
+		List<SensorData> sensordatas = sensorDataRepository.findBySensor_Id(sensor.getId());
+		
+		if ( !sensordatas.isEmpty() ) {
+	    	throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede eliminar un sensor con data asociada");
+	    }
+		
 		Location location = sensor.getLocation();
 		LocationDto locationDto = null;
 
 		if (location != null) {
 			locationDto = LocationDto.builder()
 					.id(location.getId())
-//					.companyId(location.getCompany().getId())
 					.company(CompanyDto.builder()
 							.id(location.getCompany().getId())
 							.companyName(location.getCompany().getCompanyName())
@@ -267,9 +294,9 @@ public class SensorServiceImp implements SensorService{
 	}
 
 	@Override
-	public SensorDto findByApiKey(String apiKey) {
-
-		if (!existsByApiKey(apiKey)) {
+	public SensorDto findByApiKey(String apiKey, UUID companyApiKey) {
+		validateCompanyApiKey(companyApiKey);
+		if (!existsByApiKey(apiKey, companyApiKey)) {
 			throw new RuntimeException("ApiKey not found: " + apiKey);
 		}
 
@@ -293,7 +320,6 @@ public class SensorServiceImp implements SensorService{
 		if (location != null) {
 			locationDto = LocationDto.builder()
 					.id(location.getId())
-//					.companyId(location.getCompany().getId())
 					.company(CompanyDto.builder()
 							.id(location.getCompany().getId())
 							.companyName(location.getCompany().getCompanyName())
@@ -318,8 +344,8 @@ public class SensorServiceImp implements SensorService{
 	}
 
 	@Override
-	public Boolean existsByApiKey(String apiKey) {
-
+	public Boolean existsByApiKey(String apiKey, UUID companyApiKey) {
+		validateCompanyApiKey(companyApiKey);
 		if (apiKey==null || apiKey.trim().isEmpty()) {
 			return false;
 		}

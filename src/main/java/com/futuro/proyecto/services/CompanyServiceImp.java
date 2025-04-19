@@ -2,6 +2,7 @@ package com.futuro.proyecto.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,9 @@ public class CompanyServiceImp implements CompanyService{
         	System.out.println("Id de admin invalido " + adminId);
             return new CompanyDto();
         }
+        if (companyDto.getCompanyName() == null || companyDto.getCompanyName().trim().equals("")) {
+        	throw new IllegalArgumentException("Nombre de compañia nulo o vacio");
+        }
 
         Company company = Company.builder()
                 .companyName(companyDto.getCompanyName())
@@ -70,37 +74,11 @@ public class CompanyServiceImp implements CompanyService{
                 .build();
     }
     
-//    @Override
-//    public CompanyDto create(CompanyDto companyDto, Long adminId) {
-//    	System.out.println("Admin ID recibido en el servicio: " + adminId);
-//        if (companyRepository.existsById(companyDto.getId())) {
-//            return new CompanyDto();
-//        }
-//
-//        Admin admin = adminRepository.findById(adminId).orElse(null);
-//        if (admin == null) {
-//            return new CompanyDto();
-//        }
-//
-//        Company company = Company.builder()
-//                .id(companyDto.getId())
-//                .companyName(companyDto.getCompanyName())
-//                .companyApiKey(UUID.randomUUID())
-//                .admin(admin)
-//                .build();
-//
-//        Company companyInsertada = companyRepository.save(company);
-//
-//        if (companyInsertada == null) {
-//            return new CompanyDto();
-//        }
-//
-//        return companyDto;
-//    }
     
     @Override
-    public CompanyDto getById(Long id) {
-        Company company = companyRepository.findById(id).orElse(new Company());
+    public CompanyDto findByApiKey(String companyApiKey) {
+		UUID companyUuid = UUID.fromString(companyApiKey);
+        Company company = companyRepository.findByCompanyApiKey(companyUuid).orElse(new Company());
         if (company == null || company.getId() == null) {
             return new CompanyDto();
         }
@@ -109,6 +87,39 @@ public class CompanyServiceImp implements CompanyService{
                 .companyName(company.getCompanyName())
                 .companyApiKey(company.getCompanyApiKey())
                 .build();
+    }
+
+	@Override
+	public CompanyDto update(CompanyDto companyDto, String companyApiKey) {
+		UUID companyUuid = UUID.fromString(companyApiKey);
+		validateCompanyApiKey(companyUuid);
+		System.out.println("Tratando de actualizar company de companyApiKey "+companyApiKey);
+		if(companyDto == null) {
+			throw new IllegalArgumentException("companyDto nulo o vacio");
+		}
+		if(companyDto.getCompanyName() == null || companyDto.getCompanyName().trim().equals("")) {
+			throw new IllegalArgumentException("companyName nulo o vacio");
+		}
+		Company companyExistente = companyRepository.findByCompanyApiKey(companyUuid).orElseThrow(() -> new NoSuchElementException("Company no encontrado"));
+		companyExistente.setCompanyName(companyDto.getCompanyName());
+		
+		Company companyActualizada = companyRepository.save(companyExistente);
+		
+		return CompanyDto.builder()
+				.id(companyActualizada.getId())
+				.companyName(companyActualizada.getCompanyName())
+				.companyApiKey(companyActualizada.getCompanyApiKey())
+				.build();
+		
+	}
+	
+	private void validateCompanyApiKey(UUID companyApiKey) {
+        if (companyApiKey == null) {
+            throw new IllegalArgumentException("Company API key es requerido");
+        }
+        if (!companyRepository.existsByCompanyApiKey(companyApiKey)) {
+            throw new IllegalArgumentException("company API key invalido");
+        }
     }
 
     

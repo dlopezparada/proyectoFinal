@@ -9,18 +9,16 @@ public interface SensorService {
 	
 	List<SensorDto> findAll(UUID companyApiKey);
 
-    SensorDto findById(Long id);
+    SensorDto findById(Long id, UUID companyApiKey);
 
-    SensorDto create(SensorDto sensorDto);
+    SensorDto create(SensorDto sensorDto, UUID companyApiKey);
 
-    //SensorDto update(SensorDto sensorDto);
+    SensorDto updateByApiKey(String sensorApiKey, SensorDto sensorDto, UUID companyApiKey);
 
-    SensorDto updateByApiKey(String sensorApiKey, SensorDto sensorDto);
+    SensorDto deleteById(Long id, UUID companyApiKey);
 
-    SensorDto deleteById(Long id);
+    SensorDto findByApiKey(String apiKey, UUID companyApiKey);
 
-    SensorDto findByApiKey(String apiKey);
-
-    Boolean existsByApiKey(String apiKey);
+    Boolean existsByApiKey(String apiKey, UUID companyApiKey);
 
 }

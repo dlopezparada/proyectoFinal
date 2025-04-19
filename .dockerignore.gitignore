@@ -1,0 +1,34 @@
+# Archivo: .dockerignore
+
+# Ignorar directorio de Git (muy importante)
+.git/
+.gitignore
+
+# Ignorar directorio de salida de Maven (contiene los JARs compilados, etc.)
+# Se genera DENTRO del contenedor en la etapa de build, no necesitamos copiarlo DESDE el host.
+target/
+
+# Directorio de salida de Gradle (por si acaso o para otros proyectos)
+build/
+
+# Archivos específicos de IDEs (Eclipse, IntelliJ IDEA, etc.)
+.settings/
+.classpath
+.project
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Maven Wrapper (si usas FROM maven:... en Dockerfile, no necesitas copiar estos)
+mvnw
+mvnw.cmd
+.mvn/
+
+# Archivos de Log
+*.log
+logs/
+
+# Archivos del Sistema Operativo (macOS, Windows)
+.DS_Store
+Thumbs.db

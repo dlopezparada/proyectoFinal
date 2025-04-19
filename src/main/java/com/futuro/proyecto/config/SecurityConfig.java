@@ -24,24 +24,27 @@ public class SecurityConfig {
 	
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        return httpSecurity
-                    .csrf(csrf -> csrf.disable())
-                    .httpBasic(Customizer.withDefaults())
-                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                    .authorizeHttpRequests(http -> {
-                        http.requestMatchers(HttpMethod.POST, "/companies/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.GET, "/locations/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.POST, "/locations/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.PUT, "/locations/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.DELETE, "/locations/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.GET, "/sensors/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.POST, "/sensors/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.DELETE, "/sensors/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.PUT, "/sensors/**").hasAuthority("ADMIN");
-                        http.requestMatchers(HttpMethod.POST, "/sensorData/**").hasAuthority("ADMIN");
-                        http.anyRequest().denyAll();
-                    })
-                    .build();
+		return httpSecurity
+                .csrf(csrf -> csrf.disable())
+                .httpBasic(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(http -> {
+                	http.requestMatchers(HttpMethod.POST, "/api/v1/sensor_data").permitAll();
+                    http.requestMatchers(HttpMethod.POST, "/companies/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.PUT, "/companies/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.GET, "/companies/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.GET, "/locations/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.POST, "/locations/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.PUT, "/locations/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.DELETE, "/locations/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.GET, "/sensors/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.POST, "/sensors/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.DELETE, "/sensors/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.PUT, "/sensors/**").hasRole("ADMINISTRADOR");
+                    http.requestMatchers(HttpMethod.GET, "/api/**").hasRole("ADMINISTRADOR");
+                    http.anyRequest().denyAll();
+                })
+                .build();
     }
 
 	@Bean

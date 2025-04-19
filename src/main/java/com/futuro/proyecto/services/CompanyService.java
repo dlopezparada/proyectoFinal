@@ -10,8 +10,8 @@ public interface CompanyService {
 
 	public CompanyDto create(CompanyDto companyDto, Long idAdmin);
 	
-	public CompanyDto getById(Long id);
+	public CompanyDto findByApiKey(String companyApiKey);
 	
-//	public CompanyDto update(Long id, CompanyDto companyDto, Long idAdmin);
+	public CompanyDto update(CompanyDto companyDto, String companyApiKey);
 
 }
